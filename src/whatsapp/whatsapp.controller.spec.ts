@@ -34,6 +34,7 @@ describe('WhatsappController', () => {
         'hub.challenge': 'challenge-value',
       });
       expect(result).toBe('challenge-value');
+      expect(configGet).toHaveBeenCalledWith('WHATSAPP_WEBHOOK_VERIFY_TOKEN');
     });
 
     it('throws 500 when hub params are present but server has no verify token', () => {
@@ -75,7 +76,7 @@ describe('WhatsappController', () => {
     });
 
     it('returns { ok: true } when only some hub params are provided', () => {
-      expect(controller.verifyWebhook({ 'hub.mode': 'subscribe' })).toEqual({
+      expect(controller.verifyWebhook({ 'hub.challenge': 'test' })).toEqual({
         ok: true,
       });
     });
@@ -88,8 +89,12 @@ describe('WhatsappController', () => {
 
     it('returns { ok: true } when no secret is configured', () => {
       configGet.mockReturnValue(undefined);
-      expect(controller.receiveWebhook({ key: 'val' }, {})).toEqual({
-        ok: true,
+      const body = { key: 'val' };
+      expect(
+        controller.receiveWebhook(body, { 'x-webhook-secret': 'ignored' }),
+      ).toEqual({ ok: true });
+      expect(console.log).toHaveBeenCalledWith('WhatsApp webhook received:', {
+        topLevelKeys: ['key'],
       });
     });
 
@@ -98,6 +103,10 @@ describe('WhatsappController', () => {
       const headers = { 'x-webhook-secret': 's3cret' };
       expect(controller.receiveWebhook({ key: 'val' }, headers)).toEqual({
         ok: true,
+      });
+      expect(configGet).toHaveBeenCalledWith('WHATSAPP_WEBHOOK_SECRET');
+      expect(console.log).toHaveBeenCalledWith('WhatsApp webhook received:', {
+        topLevelKeys: ['key'],
       });
     });
 
