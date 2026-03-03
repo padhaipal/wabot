@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install gitleaks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          gh release download --repo gitleaks/gitleaks --pattern '*linux_x64.tar.gz' --dir "$RUNNER_TEMP"
+          tar -xzf "$RUNNER_TEMP"/gitleaks_*_linux_x64.tar.gz -C "$RUNNER_TEMP/bin" gitleaks
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/bin/gitleaks" version
+
+      - name: Install CodeScene CLI (non-interactive)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+
+          curl -fsSL \
+            https://downloads.codescene.io/enterprise/cli/cs-linux-amd64-latest.zip \
+            -o /tmp/cs.zip
+
+          unzip -q /tmp/cs.zip -d /tmp/cs
+          chmod +x /tmp/cs/cs
+          mv /tmp/cs/cs "$HOME/.local/bin/cs"
+
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          cs version
+
+      - name: Install CodeQL bundle
+        run: |
+          mkdir -p .ci-tmp/codeql-bundle
+          curl -sSfL https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz \
+            | tar -xz -C .ci-tmp/codeql-bundle/
+          echo "${{ github.workspace }}/.ci-tmp/codeql-bundle/codeql" >> "$GITHUB_PATH"
+
+      - name: Verify CodeQL
+        run: codeql resolve packs
+
+      - name: Run full gate
+        env:
+          CS_ACCESS_TOKEN: ${{ secrets.CS_ACCESS_TOKEN }}
+        run: bash scripts/ci/all.sh
+
+      - name: Upload CI artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-debug-artifacts
+          path: |
+            .ci-tmp/npm-ci.log
+            .ci-tmp/npm-audit-full.json
+            .ci-tmp/codeql.sarif
+          if-no-files-found: ignore

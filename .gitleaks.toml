@@ -1,0 +1,6 @@
+[allowlist]
+description = "Known false positives"
+
+commits = [
+  "2538d63c42ae7e0de78b3b50e1de1355b8f0a66a",
+]

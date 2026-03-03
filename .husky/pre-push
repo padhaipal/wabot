@@ -1,0 +1,1 @@
+bash scripts/ci/pre-push-worktree.sh
