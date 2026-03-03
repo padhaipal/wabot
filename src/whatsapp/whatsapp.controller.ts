@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Controller('whatsapp')
 export class WhatsappController {
+  /* c8 ignore next -- emitDecoratorMetadata ternary */
   constructor(private readonly config: ConfigService) {}
 
   /**
@@ -23,6 +24,7 @@ export class WhatsappController {
    *  - hub.challenge=...
    */
   @Get('webhook')
+  /* c8 ignore next -- emitDecoratorMetadata ternary */
   verifyWebhook(@Query() query: Record<string, string>) {
     const mode = query['hub.mode'];
     const token = query['hub.verify_token'];
@@ -55,6 +57,7 @@ export class WhatsappController {
    */
   @Post('webhook')
   @HttpCode(200)
+  /* c8 ignore next 4 -- emitDecoratorMetadata ternary */
   receiveWebhook(
     @Body() body: any,
     @Headers() headers: Record<string, string>,
@@ -64,10 +67,7 @@ export class WhatsappController {
     //   x-webhook-secret: <WHATSAPP_WEBHOOK_SECRET>
     const expectedSecret = this.config.get<string>('WHATSAPP_WEBHOOK_SECRET');
     if (expectedSecret) {
-      const got =
-        headers['x-webhook-secret'] ||
-        headers['X-Webhook-Secret'] ||
-        headers['x-webhook-secret'.toLowerCase()];
+      const got = headers['x-webhook-secret'] || headers['X-Webhook-Secret'];
       if (got !== expectedSecret) {
         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
       }
@@ -75,10 +75,11 @@ export class WhatsappController {
 
     // Log minimally (avoid dumping PII in production logs later)
     // For now, print the keys so you can see payload shape in Railway logs.
-    // eslint-disable-next-line no-console
     console.log('WhatsApp webhook received:', {
       topLevelKeys:
-        body && typeof body === 'object' ? Object.keys(body) : typeof body,
+        body && typeof body === 'object'
+          ? Object.keys(body as Record<string, unknown>)
+          : typeof body,
     });
 
     // TODO: route events to your own internal handlers
