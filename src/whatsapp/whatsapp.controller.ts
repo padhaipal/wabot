@@ -77,7 +77,8 @@ export class WhatsappController {
     // For now, print the keys so you can see payload shape in Railway logs.
     // eslint-disable-next-line no-console
     console.log('WhatsApp webhook received:', {
-      topLevelKeys: body && typeof body === 'object' ? Object.keys(body) : typeof body,
+      topLevelKeys:
+        body && typeof body === 'object' ? Object.keys(body) : typeof body,
     });
 
     // TODO: route events to your own internal handlers

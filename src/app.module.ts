@@ -5,10 +5,7 @@ import { AppService } from './app.service';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    WhatsappModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), WhatsappModule],
   controllers: [AppController],
   providers: [AppService],
 })
