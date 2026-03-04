@@ -6,6 +6,7 @@ describe('AppController', () => {
   let appController: AppController;
 
   beforeEach(async () => {
+    expect.hasAssertions();
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [AppService],
